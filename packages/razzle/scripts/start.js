@@ -6,6 +6,7 @@ const fs = require('fs-extra');
 const webpack = require('webpack');
 const paths = require('../config/paths');
 const createConfig = require('../config/createConfig');
+const applyPlugins = require('../config/applyPlugins');
 const devServer = require('webpack-dev-server');
 const printErrors = require('razzle-dev-utils/printErrors');
 const clearConsole = require('react-dev-utils/clearConsole');
@@ -41,6 +42,10 @@ fs.removeSync(paths.appManifest);
 // options.
 let clientConfig = createConfig('web', 'dev', razzle);
 let serverConfig = createConfig('node', 'dev', razzle);
+
+// Apply plugins to config
+clientConfig = applyPlugins(clientConfig, razzle);
+serverConfig = applyPlugins(serverConfig, razzle);
 
 // Check if razzle.config has a modify function. If it does, call it on the
 // configs we just created.

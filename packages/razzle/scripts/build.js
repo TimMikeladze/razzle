@@ -18,6 +18,7 @@ const fs = require('fs-extra');
 const chalk = require('chalk');
 const paths = require('../config/paths');
 const createConfig = require('../config/createConfig');
+const applyPlugins = require('../config/applyPlugins');
 const printErrors = require('razzle-dev-utils/printErrors');
 const logger = require('razzle-dev-utils/logger');
 const FileSizeReporter = require('react-dev-utils/FileSizeReporter');
@@ -79,7 +80,7 @@ function build(previousFileSizes) {
   /* eslint-enable */
 
   if (razzle.clearConsole === false || !!razzle.host || !!razzle.port) {
-    logger.warn(`Specifying options \`port\`, \`host\`, and \`clearConsole\` in razzle.config.js has been deprecated. 
+    logger.warn(`Specifying options \`port\`, \`host\`, and \`clearConsole\` in razzle.config.js has been deprecated.
 Please use a .env file instead.
 
 ${razzle.host !== 'localhost' && `HOST=${razzle.host}`}
@@ -90,6 +91,10 @@ ${razzle.port !== '3000' && `PORT=${razzle.port}`}
   // Create our production webpack configurations and pass in razzle options.
   let clientConfig = createConfig('web', 'prod', razzle);
   let serverConfig = createConfig('node', 'prod', razzle);
+
+  // Apply plugins to config
+  clientConfig = applyPlugins(clientConfig, razzle);
+  serverConfig = applyPlugins(serverConfig, razzle);
 
   // Check if razzle.config has a modify function. If it does, call it on the
   // configs we just created.
