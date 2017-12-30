@@ -2,6 +2,24 @@
 
 const logger = require('razzle-dev-utils/logger');
 
+const loadPlugin = (plugin, logger) => {
+  try {
+    console.log(require.resolve(plugin));
+  } catch (e) {
+    logger.error(
+      `Missing '${plugin}' plugin package". Have you installed the package?`,
+      e
+    );
+  }
+  plugin = require(plugin).default;
+  if (typeof current !== 'function') {
+    logger.error(
+      `Plugin package '${plugin}' does not export a default function.`
+    );
+  }
+  return plugin;
+};
+
 const applyPlugins = (config, razzle) => {
   if (!razzle.plugins) {
     return config;
@@ -13,28 +31,28 @@ const applyPlugins = (config, razzle) => {
   }
   return razzle.plugins.reduce((result, current) => {
     let plugin;
+    let modifyFunction;
+    let options = {};
+    console.log(typeof current);
     if (typeof current === 'function') {
-      plugin = current;
-    }
-    if (typeof current === 'string') {
-      try {
-        console.log(require.resolve(current));
-      } catch (e) {
-        logger.error(
-          `Missing '${current}' plugin package". Have you installed the package?`,
-          e
-        );
+      modifyFunction = current;
+    } else if (typeof current === 'string') {
+      plugin = loadPlugin(current, logger);
+    } else if (current !== null && typeof current === 'object') {
+      if (!current.name && typeof current !== 'string') {
+        logger.error(`Plugin name is required.`);
       }
-      plugin = require(current).default;
-      if (typeof current !== 'function') {
-        logger.error(
-          `Plugin package '${current}' does not export a default function.`
-        );
+      plugin = loadPlugin(current, logger);
+      if (current.options) {
+        options = Object.assign({}, current.options);
       }
     } else {
-      logger.error('Could not log plugin.');
+      logger.error('Could not load plugin.');
     }
-    return Object.assign({}, result, plugin(result));
+    const modifiedConfig =
+      (modifyFunction && modifyFunction(result)) ||
+      plugin(options).modify(result);
+    return Object.assign({}, result, modifiedConfig);
   }, config);
 };
 
